@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wren Terminal Streaming Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #4CAF50;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .controls {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        input, button {
+            padding: 8px 12px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+        input {
+            flex-grow: 1;
+        }
+        button {
+            cursor: pointer;
+            background: #4CAF50;
+            color: black;
+            border: none;
+        }
+        button:hover {
+            background: #3e8e41;
+        }
+        #response {
+            white-space: pre-wrap;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+            min-height: 100px;
+        }
+        .copyright {
+            margin-top: 40px;
+            font-size: 0.8em;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wren Terminal Streaming Test</h1>
+    
+    <div class="controls">
+        <input type="text" id="prompt" placeholder="Enter your question...">
+        <button id="askButton">Ask (Streaming)</button>
+        <button id="standardButton">Ask (Standard)</button>
+    </div>
+    
+    <div id="response">Response will appear here...</div>
+    
+    <div class="copyright">
+        Copyright © 2025 Forest Within Therapeutic Services. All rights reserved.
+    </div>
+
+    <script>
+        document.getElementById('askButton').addEventListener('click', function() {
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) return;
+            
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = 'Connecting...';
+            
+            // Close any existing connection
+            if (window.eventSource) {
+                window.eventSource.close();
+            }
+            
+            // Create new SSE connection
+            const encodedPrompt = encodeURIComponent(prompt);
+            responseDiv.textContent = 'Connecting to stream...';
+            
+            // Clear any previous connection errors
+            console.clear();
+            console.log('Creating EventSource connection to:', `http://localhost:8000/stream?prompt=${encodedPrompt}&user_id=streaming_test_user`);
+            
+            window.eventSource = new EventSource(`http://localhost:8000/stream?prompt=${encodedPrompt}&user_id=streaming_test_user`);
+            
+            // Clear the response area when we start
+            responseDiv.textContent = '';
+            
+            // Handle incoming messages
+            window.eventSource.onmessage = function(event) {
+                try {
+                    console.log('Received event data:', event.data);
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.status === 'start') {
+                        console.log('Stream started');
+                        // Optional: Add a visual indicator that streaming has started
+                    } else if (data.status === 'streaming' && data.content !== undefined) {
+                        // Add the new content to the response
+                        responseDiv.textContent += data.content;
+                    } else if (data.status === 'complete') {
+                        console.log('Stream complete');
+                        // Optional: Add a visual indicator that streaming is complete
+                        window.eventSource.close();
+                    } else if (data.status === 'error') {
+                        console.error('Stream error:', data.message);
+                        responseDiv.textContent += '\nError from server: ' + data.message;
+                        window.eventSource.close();
+                    }
+                } catch (e) {
+                    console.error('Error parsing event data:', e);
+                    responseDiv.textContent += '\nError parsing data from server: ' + e.message;
+                    console.log('Raw event data:', event.data);
+                }
+            };
+            
+            // Handle errors
+            window.eventSource.onerror = function(error) {
+                console.error('EventSource error:', error);
+                responseDiv.textContent += '\nConnection error. Please try again.';
+                window.eventSource.close();
+            };
+        });
+        
+        document.getElementById('standardButton').addEventListener('click', async function() {
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) return;
+            
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = 'Sending request...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        command: `ask ${prompt}`,
+                        user_id: 'standard_test_user',
+                        streaming: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Server responded with an error');
+                }
+                
+                const data = await response.json();
+                responseDiv.textContent = data.output;
+            } catch (error) {
+                console.error('Error:', error);
+                responseDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

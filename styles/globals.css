@@ -1,0 +1,26 @@
+/* Basic reset styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --foreground-rgb: 120, 255, 180;
+  --background-start-rgb: 10, 10, 10;
+  --background-end-rgb: 20, 20, 30;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  font-family: 'Courier New', monospace;
+}
+
+::selection {
+  background-color: rgba(34, 197, 94, 0.3);
+}
