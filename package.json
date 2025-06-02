@@ -21,6 +21,7 @@
   "copyright": "Copyright © 2025 Forest Within Therapeutic Services. All rights reserved.",
   "dependencies": {
     "@clerk/nextjs": "^6.20.2",
+    "@tailwindcss/postcss": "^4.1.8",
     "@types/node": "^22.15.26",
     "@types/react": "^19.1.6",
     "next": "^15.3.3",
