@@ -45,4 +45,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-*.log
+*.log.env
+.env.local
+.env.development
+.env.production
+.env.*
